@@ -49,9 +49,25 @@ public class GitProducer extends DefaultProducer{
 	    	doAdd(exchange, operation, repo);
 	    	break;
 	    	
+            case GitOperation.REMOVE_OPERATION:
+                doRemove(exchange, operation, repo);
+                break;
+	    	
 	    case GitOperation.COMMIT_OPERATION:
 	    	doCommit(exchange, operation, repo);
-	    	break;	
+	    	break;
+	    
+            case GitOperation.COMMIT_ALL_OPERATION:
+                doCommitAll(exchange, operation, repo);
+                break;
+                
+            case GitOperation.CREATE_BRANCH_OPERATION:
+                doCreateBranch(exchange, operation, repo);
+                break;
+                
+            case GitOperation.DELETE_BRANCH_OPERATION:
+                doDeleteBranch(exchange, operation, repo);
+                break;
 	    }
 	    repo.close();
 	}
@@ -101,11 +117,34 @@ public class GitProducer extends DefaultProducer{
     	}
     	try {
     		git = new Git(repo);
+                if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+                    git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+                }
 			git.add().addFilepattern(fileName).call();
 		} catch (Exception e) {
 			LOG.error("There was an error in Git " + operation + " operation");
 			e.printStackTrace();
 		}
+    }
+    
+    protected void doRemove(Exchange exchange, String operation, Repository repo) {
+        Git git = null;
+        String fileName = null;
+        if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_FILE_NAME))) {
+                fileName = exchange.getIn().getHeader(GitConstants.GIT_FILE_NAME, String.class);
+        } else {
+                throw new IllegalArgumentException("File name must be specified to execute " + operation);
+        }
+        try {
+                git = new Git(repo);
+                if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+                    git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+                }
+                        git.rm().addFilepattern(fileName).call();
+                } catch (Exception e) {
+                        LOG.error("There was an error in Git " + operation + " operation");
+                        e.printStackTrace();
+                }
     }
     
     protected void doCommit(Exchange exchange, String operation, Repository repo) {
@@ -126,6 +165,54 @@ public class GitProducer extends DefaultProducer{
 			LOG.error("There was an error in Git " + operation + " operation");
 			e.printStackTrace();
 		}
+    }
+    
+    protected void doCommitAll(Exchange exchange, String operation, Repository repo) {
+        Git git = null;
+        String commitMessage = null;
+        if (ObjectHelper.isNotEmpty(exchange.getIn().getHeader(GitConstants.GIT_COMMIT_MESSAGE))) {
+                commitMessage = exchange.getIn().getHeader(GitConstants.GIT_COMMIT_MESSAGE, String.class);
+        } else {
+                throw new IllegalArgumentException("Commit message must be specified to execute " + operation);
+        }
+        try {
+            git = new Git(repo);
+            if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+                git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+            }
+                git.commit().setAll(true).setMessage(commitMessage).call();
+                } catch (Exception e) {
+                        LOG.error("There was an error in Git " + operation + " operation");
+                        e.printStackTrace();
+                }
+    }
+    
+    protected void doCreateBranch(Exchange exchange, String operation, Repository repo) {
+        Git git = null;
+        if (ObjectHelper.isEmpty(endpoint.getBranchName())) {
+            throw new IllegalArgumentException("Branch Name must be specified to execute " + operation);
+        } 
+        try {
+            git = new Git(repo);
+            git.branchCreate().setName(endpoint.getBranchName()).call();
+        } catch (Exception e) {
+            LOG.error("There was an error in Git " + operation + " operation");
+            e.printStackTrace();
+        }
+    }
+    
+    protected void doDeleteBranch(Exchange exchange, String operation, Repository repo) {
+        Git git = null;
+        if (ObjectHelper.isEmpty(endpoint.getBranchName())) {
+            throw new IllegalArgumentException("Branch Name must be specified to execute " + operation);
+        } 
+        try {
+            git = new Git(repo);
+            git.branchDelete().setBranchNames(endpoint.getBranchName()).call();
+        } catch (Exception e) {
+            LOG.error("There was an error in Git " + operation + " operation");
+            e.printStackTrace();
+        }
     }
     
     private Repository getLocalRepository(){

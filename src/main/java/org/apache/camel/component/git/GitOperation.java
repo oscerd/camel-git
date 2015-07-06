@@ -21,5 +21,9 @@ public interface GitOperation {
     public final static String CLONE_OPERATION = "clone";
     public final static String INIT_OPERATION = "init";
     public final static String ADD_OPERATION = "add";
+    public final static String REMOVE_OPERATION = "remove";
     public final static String COMMIT_OPERATION = "commit";
+    public final static String COMMIT_ALL_OPERATION = "commitAll";
+    public final static String CREATE_BRANCH_OPERATION = "createBranch";
+    public final static String DELETE_BRANCH_OPERATION = "deleteBranch";
 }
