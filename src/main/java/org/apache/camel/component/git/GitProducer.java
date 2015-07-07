@@ -7,7 +7,9 @@ import org.apache.camel.Exchange;
 import org.apache.camel.impl.DefaultProducer;
 import org.apache.camel.util.ObjectHelper;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.Status;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +69,14 @@ public class GitProducer extends DefaultProducer{
                 
             case GitOperation.DELETE_BRANCH_OPERATION:
                 doDeleteBranch(exchange, operation, repo);
+                break;
+                
+            case GitOperation.STATUS_OPERATION:
+                doStatus(exchange, operation, repo);
+                break;
+                
+            case GitOperation.LOG_OPERATION:
+                doLog(exchange, operation, repo);
                 break;
 	    }
 	    repo.close();
@@ -213,6 +223,38 @@ public class GitProducer extends DefaultProducer{
             LOG.error("There was an error in Git " + operation + " operation");
             e.printStackTrace();
         }
+    }
+    
+    protected void doStatus(Exchange exchange, String operation, Repository repo) {
+        Git git = null;
+        Status status = null;
+        try {
+            git = new Git(repo);
+            if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+                git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+            }
+                status = git.status().call();
+                } catch (Exception e) {
+                        LOG.error("There was an error in Git " + operation + " operation");
+                        e.printStackTrace();
+                }
+        exchange.getOut().setBody(status);
+    }
+    
+    protected void doLog(Exchange exchange, String operation, Repository repo) {
+        Git git = null;
+        Iterable<RevCommit> revCommit = null;
+        try {
+            git = new Git(repo);
+            if (ObjectHelper.isNotEmpty(endpoint.getBranchName())) {
+                git.checkout().setCreateBranch(false).setName(endpoint.getBranchName()).call();
+            }
+                revCommit = git.log().call();
+                } catch (Exception e) {
+                        LOG.error("There was an error in Git " + operation + " operation");
+                        e.printStackTrace();
+                }
+        exchange.getOut().setBody(revCommit);
     }
     
     private Repository getLocalRepository(){
