@@ -19,19 +19,24 @@ package org.apache.camel.component.git;
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
+import org.apache.camel.component.git.consumer.GitCommitConsumer;
+import org.apache.camel.component.git.consumer.GitType;
+import org.apache.camel.component.git.producer.GitProducer;
 import org.apache.camel.impl.DefaultEndpoint;
 import org.apache.camel.spi.Metadata;
 import org.apache.camel.spi.UriEndpoint;
 import org.apache.camel.spi.UriParam;
 import org.apache.camel.spi.UriPath;
 
-@UriEndpoint(scheme = "git", title = "Git", syntax = "git:localpath", label = "api,file")
+@UriEndpoint(scheme = "git", title = "Git", syntax = "git://localpath", label = "api,file")
 public class GitEndpoint extends DefaultEndpoint {
 
     @UriPath @Metadata(required = "true")
     private String localPath;
-    @UriPath(label = "consumer")
+    @UriPath
     private String branchName;
+    @UriPath(label = "consumer")
+    private GitType type;
     @UriParam
     private String username;
     @UriParam
@@ -52,8 +57,8 @@ public class GitEndpoint extends DefaultEndpoint {
 
 	@Override
 	public Consumer createConsumer(Processor processor) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
+	    if (type == GitType.COMMIT) return new GitCommitConsumer(this, processor);
+	    else throw new IllegalArgumentException("Cannot create producer with type " + type);
 	}
 
 	@Override
@@ -109,4 +114,12 @@ public class GitEndpoint extends DefaultEndpoint {
 	public void setOperation(String operation) {
 		this.operation = operation;
 	}
+
+    public GitType getType() {
+        return type;
+    }
+
+    public void setType(GitType type) {
+        this.type = type;
+    }
 }
