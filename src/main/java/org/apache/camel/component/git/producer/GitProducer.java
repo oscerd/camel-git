@@ -108,6 +108,14 @@ public class GitProducer extends DefaultProducer{
             case GitOperation.PULL_OPERATION:
                 doPull(exchange, operation);
                 break;
+                
+            case GitOperation.CREATE_TAG_OPERATION:
+                doCreateTag(exchange, operation);
+                break;
+                
+            case GitOperation.DELETE_TAG_OPERATION:
+                doDeleteTag(exchange, operation);
+                break;
 	    }
 	}
 	
@@ -314,7 +322,31 @@ public class GitProducer extends DefaultProducer{
         exchange.getOut().setBody(result);
     }
     
-    private Repository getLocalRepository(){
+    protected void doCreateTag(Exchange exchange, String operation) throws Exception {
+        if (ObjectHelper.isEmpty(endpoint.getTagName())) {
+            throw new IllegalArgumentException("Tag Name must be specified to execute " + operation);
+        } 
+        try {
+            git.tag().setName(endpoint.getTagName()).call();
+        } catch (Exception e) {
+            LOG.error("There was an error in Git " + operation + " operation");
+            throw e;
+        }
+    }
+    
+    protected void doDeleteTag(Exchange exchange, String operation) throws Exception {
+        if (ObjectHelper.isEmpty(endpoint.getTagName())) {
+            throw new IllegalArgumentException("Tag Name must be specified to execute " + operation);
+        } 
+        try {
+            git.tagDelete().setTags(endpoint.getTagName()).call();
+        } catch (Exception e) {
+            LOG.error("There was an error in Git " + operation + " operation");
+            throw e;
+        }
+    }
+    
+    private Repository getLocalRepository() throws IOException{
         FileRepositoryBuilder builder = new FileRepositoryBuilder();
         Repository repo = null;
 		try {
@@ -324,7 +356,7 @@ public class GitProducer extends DefaultProducer{
 			        .build();
 		} catch (IOException e) {
 			LOG.error("There was an error, cannot open " + endpoint.getLocalPath() + " repository");
-			e.printStackTrace();
+			throw e;
 		}
 		return repo;
     }

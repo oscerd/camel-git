@@ -19,6 +19,7 @@ package org.apache.camel.component.git;
 import org.apache.camel.Consumer;
 import org.apache.camel.Processor;
 import org.apache.camel.Producer;
+import org.apache.camel.component.git.consumer.GitBranchConsumer;
 import org.apache.camel.component.git.consumer.GitCommitConsumer;
 import org.apache.camel.component.git.consumer.GitTagConsumer;
 import org.apache.camel.component.git.consumer.GitType;
@@ -36,6 +37,8 @@ public class GitEndpoint extends DefaultEndpoint {
     private String localPath;
     @UriPath
     private String branchName;
+    @UriPath
+    private String tagName;
     @UriPath(label = "consumer")
     private GitType type;
     @UriParam
@@ -60,6 +63,7 @@ public class GitEndpoint extends DefaultEndpoint {
 	public Consumer createConsumer(Processor processor) throws Exception {
 	    if (type == GitType.COMMIT) return new GitCommitConsumer(this, processor);
 	    else if (type == GitType.TAG) return new GitTagConsumer(this, processor);
+	    else if (type == GitType.BRANCH) return new GitBranchConsumer(this, processor);
 	    else throw new IllegalArgumentException("Cannot create producer with type " + type);
 	}
 
@@ -124,4 +128,13 @@ public class GitEndpoint extends DefaultEndpoint {
     public void setType(GitType type) {
         this.type = type;
     }
+
+    public String getTagName() {
+        return tagName;
+    }
+
+    public void setTagName(String tagName) {
+        this.tagName = tagName;
+    }
+   
 }
